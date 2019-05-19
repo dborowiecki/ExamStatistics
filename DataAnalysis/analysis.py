@@ -34,32 +34,20 @@ class Analysis:
             params[self.gender_col] = gender
 
         result = self.get_data_by_params(params)
-        pass_rate = {}
+        years = {}
 
         for row in result:
             if row[self.group_col] == 'zdało':
-                pass_rate[row[self.year_col]] = row[self.population_col]
+                years[row[self.year_col]] = row[self.population_col]
 
-        for row in result:
-            year = row[self.year_col]
-            try:
+        for year in years:
+            for row in result:
                 if row[self.group_col] == 'przystąpiło':
-                    pass_exams = int(pass_rate[year])
-                    all_exams  = int(row[self.population_col])
-                    pass_rate[year] = (pass_exams / all_exams) * 100
+                    attendance = row[self.population_col]
+                    passed = years[year]
+                    years[year] = (int(passed) / int(attendance)) * 100
 
-            except KeyError:
-                import warnings
-                warnings.warn(
-                "Insufficient data for pass percentage in year {0} for {1}"
-                .format(year, provinence),
-                Warning,
-                stacklevel=3
-                )
-
-
-
-        return pass_rate
+        return (provinence, years)
 
     def best_pass_ratio(self, year, gender=None):
         return -1
