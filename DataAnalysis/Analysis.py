@@ -1,6 +1,5 @@
 import os
-import csv
-import json
+from csv_handle import CSVHandle
 
 
 class Analysis:
@@ -25,6 +24,7 @@ class Analysis:
     def compare_pass_ratio(self, provinence_1, provinence_2, gender='A'):
         return -1
 
-    def get_csv_data(self, **kwargs):
-       return None
 
+x = Analysis("matura_data.csv")
+out = CSVHandle.get_csv_data(x.csv, Terytorium='Pomorskie', Rok='2018')
+print(out)
