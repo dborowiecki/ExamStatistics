@@ -3,15 +3,17 @@ import csv
 
 class CSVHandle:
 
-    def __init__(self, file_path):
+    def __init__(self, file_path, delimiter=';', encoding='utf-8'):
         self.csv_file_path = file_path
-        self.ENCODING = 'windows-1250'
+        self.encoding = encoding
+        self.delimiter = delimiter
 
     def get_csv_data(self, **conditions):
         out_data = []
 
-        with open(self.csv_file_path, encoding=self.ENCODING) as csvfile:
-            reader = csv.DictReader(csvfile, delimiter=";")
+        with open(self.csv_file_path, encoding=self.encoding) as csvfile:
+            reader = csv.DictReader(csvfile, delimiter=self.delimiter)
+            reader.fieldnames = [x.lstrip().rstrip() for x in reader.fieldnames]
             headers = reader.fieldnames & conditions.keys()
             self.check_args(conditions.keys(), reader.fieldnames)
             for line in reader:
@@ -25,6 +27,12 @@ class CSVHandle:
                     out_data.append(line)
 
         return out_data
+
+    def get_column_names(self):
+        f = open(self.csv_file_path, encoding=self.encoding)
+        names = f.readline().replace('\n', '').split(self.delimiter)
+        f.close()
+        return names
 
     def check_args(self, kwargs, all_possible_kwargs):
         args = kwargs - all_possible_kwargs

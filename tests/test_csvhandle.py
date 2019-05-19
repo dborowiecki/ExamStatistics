@@ -20,6 +20,7 @@ Pomorze;zdało;kobiety;2000;20
 Wielkopolska;przystąpiło;kobiety;2000;40
 Wielkopolska;zdało;kobiety;2010;20
 """)
+        
 
     single_prams = [
         ({'Terytorium': "Polska"},  1),
@@ -70,7 +71,7 @@ Wielkopolska;zdało;kobiety;2010;20
     @pytest.mark.parametrize("kwargs, expected_size", single_prams)
     def test_find_by_single_param(self, kwargs, expected_size):
         handle = csv_handle.CSVHandle(self.csv_dir)
-        handle.ENCODING = 'utf-8'
+
         data = handle.get_csv_data(**kwargs)
 
         assert len(data) is expected_size
@@ -78,7 +79,7 @@ Wielkopolska;zdało;kobiety;2010;20
     @pytest.mark.parametrize("kwargs, expected_size", multiple_prams)
     def test_find_by_multiple_param(self, kwargs, expected_size):
         handle = csv_handle.CSVHandle(self.csv_dir)
-        handle.ENCODING = 'utf-8'
+
         data = handle.get_csv_data(**kwargs)
 
         assert len(data) is expected_size
@@ -86,16 +87,23 @@ Wielkopolska;zdało;kobiety;2010;20
     @pytest.mark.parametrize("kwargs, expected_size", list_params)
     def test_find_by_list_param(self, kwargs, expected_size):
         handle = csv_handle.CSVHandle(self.csv_dir)
-        handle.ENCODING = 'utf-8'
+
         data = handle.get_csv_data(**kwargs)
 
         assert len(data) is expected_size
 
     def test_find_by_incorrect_param(self):
         handle = csv_handle.CSVHandle(self.csv_dir)
-        '''changed encoding from default windows-1250 to utf-8'''
-        handle.ENCODING = 'utf-8'
+
         with pytest.warns(Warning):
             data = handle.get_csv_data(miasto='4')
 
         assert len(data) is 5
+
+    def test_get_column_names(self):
+        handle = csv_handle.CSVHandle(self.csv_dir)
+        
+        expected = ['Terytorium','Przystąpiło/zdało','Płeć','Rok','Liczba osób']
+        actual = handle.get_column_names()
+
+        assert actual == expected
