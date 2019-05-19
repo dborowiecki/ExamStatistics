@@ -36,8 +36,14 @@ Wielkopolska;zdało;kobiety;2010;20
 
         assert expected == actual
 
-    def test_count_average_year_exception(self):
+    def test_count_average_invalid_year_exception(self):
         a = analysis.Analysis(self.csv_dir, encoding='utf-8')
 
         with pytest.raises(ValueError):
             a.average_in_year(-1)
+
+    def test_count_average_invalid_gender_exception(self):
+        a = analysis.Analysis(self.csv_dir, encoding='utf-8')
+
+        with pytest.raises(ValueError):
+            a.average_in_year(2000, 'invalid')
