@@ -5,10 +5,10 @@ from .csv_handle import CSVHandle
 class Analysis:
     PROVINENCE_COUNT = 16
 
-    def __init__(self, file_name, encoding = 'windows-1250'):
+    def __init__(self, file_name, encoding='windows-1250'):
         self.csv = file_name
         self.csv_handler = CSVHandle(file_name, encoding=encoding)
-        #TODO: move to settings 
+        # TODO: move to settings
         self.area_col = 'Terytorium'
         self.group_col = 'Przystąpiło/zdało'
         self.year_col = 'Rok'
@@ -18,7 +18,7 @@ class Analysis:
     def average_in_year(self, years, gender=None):
         '''Count average voivodeship attendance based on number of 
         people who took exam'''
-        result = self.attendance_in_area('Polska',years, gender)
+        result = self.attendance_in_area('Polska', years, gender)
 
         all_people = [int(x[self.population_col]) for x in result]
 
@@ -27,8 +27,39 @@ class Analysis:
         return average
 
     def percentage_of_pass(self, provinence, gender=None):
+        params = {
+            self.area_col: provinence,
+        }
+        if gender is not None:
+            params[self.gender_col] = gender
 
-        return -1
+        result = self.get_data_by_params(params)
+        pass_rate = {}
+
+        for row in result:
+            if row[self.group_col] == 'zdało':
+                pass_rate[row[self.year_col]] = row[self.population_col]
+
+        for row in result:
+            year = row[self.year_col]
+            try:
+                if row[self.group_col] == 'przystąpiło':
+                    pass_exams = int(pass_rate[year])
+                    all_exams  = int(row[self.population_col])
+                    pass_rate[year] = (pass_exams / all_exams) * 100
+
+            except KeyError:
+                import warnings
+                warnings.warn(
+                "Insufficient data for pass percentage in year {0} for {1}"
+                .format(year, provinence),
+                Warning,
+                stacklevel=3
+                )
+
+
+
+        return pass_rate
 
     def best_pass_ratio(self, year, gender=None):
         return -1
@@ -39,7 +70,7 @@ class Analysis:
     def compare_pass_ratio(self, provinence_1, provinence_2, gender=None):
         return -1
 
-    def attendance_in_area(self, area, years, gender = None):
+    def attendance_in_area(self, area, years, gender=None):
         '''
         Return rows with attendance of exam, raises exception when
         result is empty.
@@ -63,7 +94,6 @@ class Analysis:
             raise ValueError('No data found for params {0}'
                              .format(params))
         return result
-
 
 
 x = Analysis("matura_data.csv")
