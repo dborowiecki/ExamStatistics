@@ -27,7 +27,7 @@ Małopolska;zdało;mężczyźni;2010;50
 Małopolska;przystąpiło;kobiety;2011;100
 Małopolska;przystąpiło;mężczyźni;2011;100
 Małopolska;zdało;kobiety;2011;40
-Małopolska;zdało;mężczyźni;2011;40
+Małopolska;zdało;mężczyźni;2011;20
 Kujawsko-Pomorskie;zdało;mężczyźni;2010;20
 """)
 
@@ -61,7 +61,7 @@ Kujawsko-Pomorskie;zdało;mężczyźni;2010;20
         a = analysis.Analysis(self.csv_dir, encoding='utf-8')
 
         expected = {'2010': (100 / 200) * 100,
-                    '2011': (80 / 200) * 100}
+                    '2011': (40 / 200) * 100}
         _, results = a.percentage_of_pass("Małopolska")
         assert expected == results
 
@@ -82,8 +82,16 @@ Kujawsko-Pomorskie;zdało;mężczyźni;2010;20
 
     def test_pass_ratio_regression(self):
         a = analysis.Analysis(self.csv_dir, encoding='utf-8')
-        expected = ['2010 -> 2011', 'Małopolska', 10.0]
+        expected = ['2010 -> 2011', 'Małopolska', 30.0]
         with pytest.warns(Warning):
             results = a.pass_ratio_regression()[0]
+        results = [*results]
+        assert len(set(expected) & set(results)) is len(expected)
+
+    def test_pass_ratio_regression_by_gender(self):
+        a = analysis.Analysis(self.csv_dir, encoding='utf-8')
+        expected = ['2010 -> 2011', 'Małopolska', 10.0]
+        with pytest.warns(Warning):
+            results = a.pass_ratio_regression(gender = 'kobiety')[0]
         results = [*results]
         assert len(set(expected) & set(results)) is len(expected)
