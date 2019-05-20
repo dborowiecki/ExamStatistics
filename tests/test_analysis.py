@@ -79,3 +79,11 @@ Kujawsko-Pomorskie;zdało;mężczyźni;2010;20
         expected = {'2010': 50}
         _, results = a.percentage_of_pass("Małopolska", years='2010')
         assert expected == results
+
+    def test_pass_ratio_regression(self):
+        a = analysis.Analysis(self.csv_dir, encoding='utf-8')
+        expected = ['2010 -> 2011', 'Małopolska', 10.0]
+        with pytest.warns(Warning):
+            results = a.pass_ratio_regression()[0]
+        results = [*results]
+        assert len(set(expected) & set(results)) is len(expected)

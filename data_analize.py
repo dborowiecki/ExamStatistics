@@ -1,4 +1,5 @@
-import DataAnalysis as d
-x = .Analysis("matura_data.csv")
+from DataAnalysis import analysis as a
 
-print(x.best_pass_ratio("2011"))
+
+x = a.Analysis("matura_data.csv")
+print(x.pass_ratio_regression())

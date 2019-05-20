@@ -1,6 +1,9 @@
 import os
 import operator
+from collections import namedtuple
 from .csv_handle import CSVHandle
+
+
 class Analysis:
     PROVINENCE_COUNT = 16
 
@@ -58,15 +61,36 @@ class Analysis:
             params[self.gender_col] = gender
 
         all_in_year = self.get_data_by_params(params)
-
         pass_by_area = calculate_pass_ratio(year, all_in_year)
-
         best = sorted(pass_by_area, key=pass_by_area.get)[-1]
 
         return (pass_by_area[best], best)
 
     def pass_ratio_regression(self, gender=None):
-        return -1
+        params = {}
+        if gender is not None:
+            params[self.gender_col] = gender
+
+        # all areas pass ratio by years dict[year][area] = score
+        data_by_years = {}
+        all_ratios = self.get_data_by_params(params)
+
+        for row in all_ratios:
+            year = row[self.year_col]
+            if year not in data_by_years:
+                data_by_years[year] = []
+
+            data_by_years[year].append(row)
+
+        pass_ratio_by_years = {}
+        years = data_by_years.keys()
+        for year in years:
+            pass_ratio_by_years[year] = self.calculate_pass_ratio(data_by_years[
+                                                                  year])
+
+        regressions = self.find_regression_in_pass(pass_ratio_by_years)
+
+        return regressions
 
     def compare_pass_ratio(self, provinence_1, provinence_2, gender=None):
         return -1
@@ -96,7 +120,10 @@ class Analysis:
                              .format(params))
         return result
 
-    def calculate_pass_ratio(self, years, rows):
+    def calculate_pass_ratio(self, rows):
+        '''
+        Calculate pass ratio in rows sorted by area
+        '''
         pass_by_area = {}
         for row in rows:
             area = row[self.area_col]
@@ -110,25 +137,51 @@ class Analysis:
 
         for area in pass_by_area:
             data = pass_by_area[area]
-            pass_by_area[area] = (int(data['Pass']) / int(data['All'])) * 100
+            try:
+                pass_by_area[area] = (
+                    int(data['Pass']) / int(data['All'])) * 100
+
+            except TypeError:
+                import warnings
+                warnings.warn(
+                    "There is insufficient data for area {0}\n"
+                    + "Found passed: {1} Found attendance: {2}"
+                    .format(area, data['Pass'], data['All']),
+                    Warning,
+                    stacklevel=4
+                )
 
         return pass_by_area
-    # def calculate_pass_ratio(self, data_rows, by_param, param_values):
-    #     result = namedtuple('Parameter', 'Pass ratio', verbose = True)
-    #     results = {}
 
-    #     for param in param_values:
-    #         for row in data_rows:
-    #             if row[by_param] not in param_values:
-    #                 continue
+    def find_regression_in_pass(self, pass_by_years):
+        '''
+        Finds years where regression in percentage of passing exam was found
+        '''
+        years_with_regression = []
+        Years = namedtuple('year', 'next_year')
+        Regression = namedtuple('Regression', ['years', 'area', 'diff'])
 
-    #             if row[self.group_col] == 'zdało':
-    #                 years[row[self.year_col]] = row[self.population_col]
+        years = set(pass_by_years.keys())
+        years = sorted(years)
+        for i in range(len(years) - 1):
+            this_year, next_year = years[i], years[i + 1]
 
-    #         for year in years:
-    #             for row in result:
-    #                 if row[self.group_col] == 'przystąpiło':
-    #                     attendance = row[self.population_col]
-    #                     passed = years[year]
-    #                     years[year] = (int(passed) / int(attendance)) * 100
+            for area, pass_ratio in pass_by_years[this_year].items():
+                try:
+                    next_year_pass_ratio = pass_by_years[next_year][area]
+                    if pass_ratio > next_year_pass_ratio:
+                        build = [
+                            "{0} -> {1}".format(this_year, next_year),
+                            area,
+                            pass_ratio - next_year_pass_ratio
+                        ]
+                        years_with_regression.append(Regression(*build))
+                except:
+                    import warnings
+                    warnings.warn(
+                        "Could not fund next year data for area " + area,
+                        Warning,
+                        stacklevel=4
+                    )
 
+        return years_with_regression
