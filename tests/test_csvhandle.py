@@ -20,7 +20,7 @@ Pomorze;zdało;kobiety;2000;20
 Wielkopolska;przystąpiło;kobiety;2000;40
 Wielkopolska;zdało;kobiety;2010;20
 """)
-        
+
 
     single_prams = [
         ({'Terytorium': "Polska"},  1),

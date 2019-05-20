@@ -1,9 +1,6 @@
 import os
 import operator
-
-from csv_handle import CSVHandle
-
-
+from .csv_handle import CSVHandle
 class Analysis:
     PROVINENCE_COUNT = 16
 
@@ -60,25 +57,10 @@ class Analysis:
         if gender is not None:
             params[self.gender_col] = gender
 
-        all_ratios = self.get_data_by_params(params)
+        all_in_year = self.get_data_by_params(params)
 
-        pass_by_area = {}
+        pass_by_area = calculate_pass_ratio(year, all_in_year)
 
-        for row in all_ratios:
-            area = row[self.area_col]
-            if area not in pass_by_area:
-                pass_by_area[area] = {'All': None, 'Pass': None}
-
-            if row[self.group_col] == 'zdało':
-                pass_by_area[area]['Pass'] = row[self.population_col]
-            if row[self.group_col] == 'przystąpiło':
-                pass_by_area[area]['All'] = row[self.population_col]
-
-        for area in pass_by_area:
-            data = pass_by_area[area]
-            pass_by_area[area] = (int(data['Pass']) / int(data['All'])) * 100
-
-        print(pass_by_area)
         best = sorted(pass_by_area, key=pass_by_area.get)[-1]
 
         return (pass_by_area[best], best)
@@ -114,6 +96,23 @@ class Analysis:
                              .format(params))
         return result
 
+    def calculate_pass_ratio(self, years, rows):
+        pass_by_area = {}
+        for row in rows:
+            area = row[self.area_col]
+            if area not in pass_by_area:
+                pass_by_area[area] = {'All': None, 'Pass': None}
+
+            if row[self.group_col] == 'zdało':
+                pass_by_area[area]['Pass'] = row[self.population_col]
+            if row[self.group_col] == 'przystąpiło':
+                pass_by_area[area]['All'] = row[self.population_col]
+
+        for area in pass_by_area:
+            data = pass_by_area[area]
+            pass_by_area[area] = (int(data['Pass']) / int(data['All'])) * 100
+
+        return pass_by_area
     # def calculate_pass_ratio(self, data_rows, by_param, param_values):
     #     result = namedtuple('Parameter', 'Pass ratio', verbose = True)
     #     results = {}
@@ -133,7 +132,3 @@ class Analysis:
     #                     passed = years[year]
     #                     years[year] = (int(passed) / int(attendance)) * 100
 
-
-x = Analysis("matura_data.csv")
-
-print(x.best_pass_ratio("2011"))
