@@ -60,18 +60,22 @@ Kujawsko-Pomorskie;zdało;mężczyźni;2010;20
     def test_pass_percentage_positive(self):
         a = analysis.Analysis(self.csv_dir, encoding='utf-8')
 
-        expected = {'2010': (100/200)*100,
-        '2011':(80/200)*100}
+        expected = {'2010': (100 / 200) * 100,
+                    '2011': (80 / 200) * 100}
         _, results = a.percentage_of_pass("Małopolska")
         assert expected == results
 
     def test_pass_percentage_by_gender(self):
         a = analysis.Analysis(self.csv_dir, encoding='utf-8')
 
-        expected = {'2010': (50/100)*100,
-        '2011':(40/100)*100}
+        expected = {'2010': (50 / 100) * 100,
+                    '2011': (40 / 100) * 100}
         _, results = a.percentage_of_pass("Małopolska", 'kobiety')
         assert expected == results
 
-   
+    def test_pass_percentage_by_year(self):
+        a = analysis.Analysis(self.csv_dir, encoding='utf-8')
 
+        expected = {'2010': 50}
+        _, results = a.percentage_of_pass("Małopolska", years='2010')
+        assert expected == results
