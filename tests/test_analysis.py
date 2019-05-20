@@ -18,7 +18,8 @@ Polska;przystąpiło;kobiety;2000;200
 Polska;przystąpiło;mężczyźni;2000;200
 Pomorze;przystąpiło;kobiety;2000;50
 Pomorze;zdało;kobiety;2000;20
-Wielkopolska;przystąpiło;mężczyźni;2000;40
+Wielkopolska;przystąpiło;mężczyźni;2010;40
+Wielkopolska;zdało;mężczyźni;2010;40
 Wielkopolska;zdało;kobiety;2010;20
 Małopolska;przystąpiło;kobiety;2010;100
 Małopolska;przystąpiło;mężczyźni;2010;100
@@ -92,6 +93,22 @@ Kujawsko-Pomorskie;zdało;mężczyźni;2010;20
         a = analysis.Analysis(self.csv_dir, encoding='utf-8')
         expected = ['2010 -> 2011', 'Małopolska', 10.0]
         with pytest.warns(Warning):
-            results = a.pass_ratio_regression(gender = 'kobiety')[0]
+            results = a.pass_ratio_regression(gender='kobiety')[0]
         results = [*results]
         assert len(set(expected) & set(results)) is len(expected)
+
+    def test_pass_ratio_comparation(self):
+        a = analysis.Analysis(self.csv_dir, encoding='utf-8')
+        expected = {'2010': 'Małopolska','2011': 'Insufficient data'}
+        with pytest.warns(Warning):
+            results = a.compare_pass_ratio('Wielkopolska', 'Małopolska')
+
+        assert results == expected
+
+    def test_pass_ratio_comparation_by_gender(self):
+        a = analysis.Analysis(self.csv_dir, encoding='utf-8')
+        expected = {'2010': 'Insufficient data','2011': 'Insufficient data'}
+        with pytest.warns(Warning):
+            results = a.compare_pass_ratio('Wielkopolska', 'Małopolska', gender='kobiety')
+
+        assert results == expected

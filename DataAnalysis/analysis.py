@@ -75,12 +75,7 @@ class Analysis:
         data_by_years = {}
         all_ratios = self.get_data_by_params(params)
 
-        for row in all_ratios:
-            year = row[self.year_col]
-            if year not in data_by_years:
-                data_by_years[year] = []
-
-            data_by_years[year].append(row)
+        data_by_years = self.sort_data_by_years(all_ratios)
 
         pass_ratio_by_years = {}
         years = data_by_years.keys()
@@ -93,7 +88,38 @@ class Analysis:
         return regressions
 
     def compare_pass_ratio(self, provinence_1, provinence_2, gender=None):
-        return -1
+        if provinence_1 is None or provinence_2 is None:
+            raise ValueError("Provinence cannot be empty")
+        params = {}
+        params[self.area_col] = [provinence_1, provinence_2]
+
+        if gender is not None:
+            params[self.gender_col] = [gender]
+
+        provinence_data = self.get_data_by_params(params)
+        data_by_years = self.sort_data_by_years(provinence_data)
+        pass_ratio_by_years = {}
+        for year in data_by_years:
+            pass_ratio_by_years[year] = self.calculate_pass_ratio(data_by_years[
+                                                                  year])
+
+        better_in_year = {}
+        for year, data in pass_ratio_by_years.items():
+            try:
+                p1 = data[provinence_1]
+                p2 = data[provinence_2]
+                better_in_year[
+                    year] = provinence_1 if p1 > p2 else provinence_2
+            except KeyError as e:
+                import warnings
+                warnings.warn(
+                    "There is not enough data for provinence {0} for comparing pass in {1}"
+                    .format(e.args[0], year),
+                    Warning,
+                    stacklevel=4)
+                better_in_year[year] = 'Insufficient data'
+
+        return better_in_year
 
     def attendance_in_area(self, area, years, gender=None):
         '''
@@ -135,23 +161,24 @@ class Analysis:
             if row[self.group_col] == 'przystąpiło':
                 pass_by_area[area]['All'] = row[self.population_col]
 
+        ratio = {}
         for area in pass_by_area:
             data = pass_by_area[area]
             try:
-                pass_by_area[area] = (
+                ratio[area] = (
                     int(data['Pass']) / int(data['All'])) * 100
 
             except TypeError:
                 import warnings
                 warnings.warn(
-                    "There is insufficient data for area {0}\n"
-                    + "Found passed: {1} Found attendance: {2}"
+                    """There is insufficient data for area {0}\n
+Found passed: {1} Found attendance: {2}"""
                     .format(area, data['Pass'], data['All']),
                     Warning,
                     stacklevel=4
                 )
 
-        return pass_by_area
+        return ratio
 
     def find_regression_in_pass(self, pass_by_years):
         '''
@@ -185,3 +212,18 @@ class Analysis:
                     )
 
         return years_with_regression
+
+    def sort_data_by_years(self, data):
+        '''
+        Take list of ordered dict and sort it by years
+        '''
+        data_by_years = {}
+
+        for row in data:
+            year = row[self.year_col]
+            if year not in data_by_years:
+                data_by_years[year] = []
+
+            data_by_years[year].append(row)
+
+        return data_by_years
