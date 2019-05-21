@@ -2,7 +2,9 @@ import csv
 import sqlite3
 import json
 import requests
+import os
 from requests.exceptions import HTTPError
+
 
 class CSVHandle:
 
@@ -20,36 +22,61 @@ class CSVHandle:
 
             file = requests.get(csv_url)
             file.raise_for_status()
+            file.encoding = self.encoding
             csvfile = file.text
+            with open(self.csv_file_path, 'w+', encoding=self.encoding) as f:
 
-            with open(self.csv_file_path, 'w+') as f:
                 f.write(csvfile)
 
         except KeyError as k:
-        	raise Exception("Can't find info about csv file location in api at {0}"
-        	.format(api_url) )
+            raise Exception("Can't find info about csv file location in api at {0}"
+                            .format(api_url))
         except HTTPError as e:
             print("Connecting to api failed: \n" + repr(e))
-            raise ValueError("Cannot connect to "+api_url +" and get csv data")
+            raise ValueError("Cannot connect to " +
+                             api_url + " and get csv data")
 
     def get_csv_data(self, **conditions):
         out_data = []
 
         with open(self.csv_file_path, encoding=self.encoding) as csvfile:
             reader = csv.DictReader(csvfile, delimiter=self.delimiter)
+
             reader.fieldnames = [x.lstrip().rstrip()
                                  for x in reader.fieldnames]
-            headers = reader.fieldnames & conditions.keys()
-            self.check_args(conditions.keys(), reader.fieldnames)
-            for line in reader:
-                add_line = True
 
-                for parameter in headers:
-                    if line[parameter] not in conditions[parameter]:
-                        add_line = False
+            fixed_params = self.fix_params(conditions, reader.fieldnames)
 
-                if add_line:
-                    out_data.append(line)
+            out_data = self.parametrize_data(reader, **fixed_params)
+
+        return out_data
+
+    def fix_params(self, given_params, present_params):
+        fixed_params = {}
+
+        for param in given_params:
+            if param in present_params:
+                fixed_params[param] = given_params[param]
+            else:
+                import warnings
+                warnings.warn(
+                    "Parameter {0} was not found in column names"
+                    .format(param),
+                    Warning,
+                    stacklevel=3)
+        return fixed_params
+
+    def parametrize_data(self, data, **parameters):
+        out_data = []
+        for line in data:
+            add_line = True
+
+            for parameter in parameters:
+                if line[parameter] not in parameters[parameter]:
+                    add_line = False
+
+            if add_line:
+                out_data.append(line)
 
         return out_data
 
@@ -72,3 +99,94 @@ class CSVHandle:
         pass
 
 
+class DatabaseCSVHandle(CSVHandle):
+
+    def __init__(self, db_path, db_name):
+        self.api_url = "https://api.dane.gov.pl/resources/17363"
+        self.db_name = db_path + db_name
+        self.db_path = db_path
+        self.table_name = 'matura'
+        self.database_uri = 'file:{0}?mode=ro'.format(db_path)
+        self.encoding = 'windows-1250'
+        self.delimiter = ';'
+
+    def get_csv_data(self):
+        pass
+
+    def create_db(self):
+        try:
+            conn = sqlite3.connect(self.db_name)
+        except Error as e:
+            print(e)
+        finally:
+            conn.close()
+        pass
+
+    def impot_data(self):
+        self.csv_file_path = self.db_path + "temp.csv"
+        self.download_data_from_api(self.api_url)
+        self.clean_db_table()
+        self.create_table()
+        self.import_csv_to_sql()
+        os.remove(self.csv_file_path)
+
+    def clean_db_table(self):
+        try:
+            con = sqlite3.connect(self.db_name)
+            c = con.cursor()
+            statement = "DROP TABLE IF EXISTS " + self.table_name
+            c.execute(statement)
+            con.commit()
+
+        except Exception as e:
+            print(e)
+      #  finally:
+          #  conn.close()
+
+    def create_table(self):
+        try:
+            con = sqlite3.connect(self.db_name)
+            c = con.cursor()
+            col_names = self.get_column_names()
+            statement = "CREATE TABLE matura {0}".format(tuple(col_names))
+            c.execute(statement)
+            con.commit()
+        except ValueError as e:
+            print(e)
+
+    def import_csv_to_sql(self):
+        try:
+            con = sqlite3.connect(self.db_name)
+            c = con.cursor()
+            with open(self.csv_file_path, 'r', encoding='Windows-1250') as f:
+                reader = csv.DictReader(
+                    f, delimiter=self.delimiter)
+
+                for line in reader:
+                    args = tuple(line.values())
+                    statement = "INSERT INTO matura VALUES (?,?,?,?,?)"
+                    c.execute(statement, args)
+            con.commit()
+            con.close()
+        except ValueError as e:
+            print(str(e))
+
+    def get_csv_data(self, **conditions):
+        out = []
+        try:
+            con = sqlite3.connect(self.db_name)
+            con.row_factory = sqlite3.Row
+            c = con.cursor()
+            c.execute(
+                "SELECT name FROM sqlite_master WHERE type='table';")
+            c.execute("SELECT * FROM matura")
+            out = c.fetchall()
+
+            fixed_params = self.fix_params(conditions, out[0].keys())
+            out = self.parametrize_data(out, **fixed_params)
+            con.commit()
+        except ValueError as e:
+            print(e)
+
+        print(out)
+        return out
