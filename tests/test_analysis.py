@@ -99,7 +99,7 @@ Kujawsko-Pomorskie;zdało;mężczyźni;2010;20
 
     def test_pass_ratio_comparation(self):
         a = analysis.Analysis(self.csv_dir, encoding='utf-8')
-        expected = {'2010': 'Małopolska','2011': 'Insufficient data'}
+        expected = {'2010': 'Małopolska', '2011': 'Insufficient data'}
         with pytest.warns(Warning):
             results = a.compare_pass_ratio('Wielkopolska', 'Małopolska')
 
@@ -107,8 +107,22 @@ Kujawsko-Pomorskie;zdało;mężczyźni;2010;20
 
     def test_pass_ratio_comparation_by_gender(self):
         a = analysis.Analysis(self.csv_dir, encoding='utf-8')
-        expected = {'2010': 'Insufficient data','2011': 'Insufficient data'}
+        expected = {'2010': 'Insufficient data', '2011': 'Insufficient data'}
         with pytest.warns(Warning):
-            results = a.compare_pass_ratio('Wielkopolska', 'Małopolska', gender='kobiety')
+            results = a.compare_pass_ratio(
+                'Wielkopolska', 'Małopolska', gender='kobiety')
 
         assert results == expected
+
+    incorrect_args = [
+    (None, "Pomorze"),
+    ("Wielkopolska", None),
+    (None, None)
+    ]
+    
+    @pytest.mark.parametrize("p1, p2", incorrect_args)
+    def test_pass_ratio_comparation_failed(self, p1, p2):
+        a = analysis.Analysis(self.csv_dir, encoding='utf-8')
+        expected = {'2010': 'Insufficient data', '2011': 'Insufficient data'}
+        with pytest.raises(ValueError):
+            results = a.compare_pass_ratio(p1,p2)

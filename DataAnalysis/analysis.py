@@ -21,9 +21,7 @@ class Analysis:
         '''Count average voivodeship attendance based on number of 
         people who took exam'''
         result = self.attendance_in_area('Polska', years, gender)
-
         all_people = [int(x[self.population_col]) for x in result]
-
         average = sum(all_people) / self.PROVINENCE_COUNT
 
         return average

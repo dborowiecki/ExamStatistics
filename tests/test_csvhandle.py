@@ -1,11 +1,21 @@
 import pytest
 import os
 import warnings
+import json
+import requests
 from DataAnalysis import csv_handle
 from collections import OrderedDict
 
 
 class TestCsvHandle(object):
+
+    test_csv_content = """Terytorium;Przystąpiło/zdało;Płeć;Rok;Liczba osób
+Polska;przystąpiło;kobiety;2000;200
+Pomorze;przystąpiło;kobiety;2000;50
+Pomorze;zdało;kobiety;2000;20
+Wielkopolska;przystąpiło;kobiety;2000;40
+Wielkopolska;zdało;kobiety;2010;20
+"""
 
     @pytest.fixture(autouse=True)
     def create_data_file(self, tmpdir):
@@ -13,14 +23,7 @@ class TestCsvHandle(object):
         d = tmpdir.mkdir("resource")
         self.csv_dir = d.join("test.csv")
 
-        self.csv_dir.write("""Terytorium;Przystąpiło/zdało;Płeć;Rok;Liczba osób
-Polska;przystąpiło;kobiety;2000;200
-Pomorze;przystąpiło;kobiety;2000;50
-Pomorze;zdało;kobiety;2000;20
-Wielkopolska;przystąpiło;kobiety;2000;40
-Wielkopolska;zdało;kobiety;2010;20
-""")
-
+        self.csv_dir.write(self.test_csv_content)
 
     single_prams = [
         ({'Terytorium': "Polska"},  1),
@@ -102,8 +105,63 @@ Wielkopolska;zdało;kobiety;2010;20
 
     def test_get_column_names(self):
         handle = csv_handle.CSVHandle(self.csv_dir)
-        
-        expected = ['Terytorium','Przystąpiło/zdało','Płeć','Rok','Liczba osób']
+
+        expected = ['Terytorium', 'Przystąpiło/zdało',
+                    'Płeć', 'Rok', 'Liczba osób']
         actual = handle.get_column_names()
 
         assert actual == expected
+
+    def test_get_data_from_api(self, requests_mock):
+        url = 'http://data_api_test.com/jsonapi'
+        csv_data = 'http://data.com/csvfile.csv'
+        content = {}
+        content['data'] = {}
+        content['data']['attributes'] = {}
+        content['data']['attributes']['file_url'] = csv_data
+        requests_mock.get(url, text=json.dumps(content))
+        requests_mock.get(csv_data, text=self.test_csv_content)
+
+        save_dir = self.csv_dir + "2"
+        handle = csv_handle.CSVHandle(save_dir)
+        handle.download_data_from_api(url)
+
+        expected = self.csv_dir.read()
+        actual = save_dir.read()
+        assert expected == actual
+
+    def test_get_data_from_fail_api(self, requests_mock):
+        url = 'http://data_api_test.com/jsonapi'
+        csv_data = 'http://data.com/csvfile.csv'
+        content = {}
+        requests_mock.get(url, text=json.dumps(content))
+        requests_mock.get(csv_data, text=self.test_csv_content)
+
+        save_dir = self.csv_dir + "2"
+        handle = csv_handle.CSVHandle(save_dir)
+        with pytest.raises(Exception):
+            handle.download_data_from_api(url)
+
+    def test_get_data_from_fail_find_api(self, requests_mock):
+        url = 'http://data_api_test.com/jsonapi'
+        csv_data = 'http://data.com/csvfile.csv'
+        content = {}
+        requests_mock.get(url, text=json.dumps(content))
+        requests_mock.get(csv_data, text=self.test_csv_content)
+
+        save_dir = self.csv_dir + "2"
+        handle = csv_handle.CSVHandle(save_dir)
+        with pytest.raises(Exception, match = r"Can't find info about csv file location in api*"):
+            handle.download_data_from_api(url)
+
+    def test_get_data_from_fail_connect(self, requests_mock):
+        url = 'http://data_api_test.com/jsonapi'
+        csv_data = 'http://data.com/csvfile.csv'
+        content = {}
+        requests_mock.get(url, exc=requests.exceptions.HTTPError)
+        requests_mock.get(csv_data, text=self.test_csv_content)
+
+        save_dir = self.csv_dir + "2"
+        handle = csv_handle.CSVHandle(save_dir)
+        with pytest.raises(ValueError, match = r"Cannot connect to .* and get csv data" ):
+            handle.download_data_from_api(url)
