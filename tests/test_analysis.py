@@ -61,29 +61,29 @@ Kujawsko-Pomorskie;zdało;mężczyźni;2010;20
     def test_pass_percentage_positive(self):
         a = analysis.Analysis(self.csv_dir, encoding='utf-8')
 
-        expected = {'2010': (100 / 200) * 100,
-                    '2011': (40 / 200) * 100}
+        expected = {'2010': {'Małopolska': (100 / 200) * 100},
+                    '2011': {'Małopolska': (60 / 200) * 100}}
         _, results = a.percentage_of_pass("Małopolska")
         assert expected == results
 
     def test_pass_percentage_by_gender(self):
         a = analysis.Analysis(self.csv_dir, encoding='utf-8')
 
-        expected = {'2010': (50 / 100) * 100,
-                    '2011': (40 / 100) * 100}
+        expected = {'2010': {'Małopolska': (50 / 100) * 100},
+                    '2011': {'Małopolska': (40 / 100) * 100}}
         _, results = a.percentage_of_pass("Małopolska", 'kobiety')
         assert expected == results
 
     def test_pass_percentage_by_year(self):
         a = analysis.Analysis(self.csv_dir, encoding='utf-8')
 
-        expected = {'2010': 50}
+        expected = {'2010': {'Małopolska': (50 / 100) * 100}}
         _, results = a.percentage_of_pass("Małopolska", years='2010')
         assert expected == results
 
     def test_pass_ratio_regression(self):
         a = analysis.Analysis(self.csv_dir, encoding='utf-8')
-        expected = ['2010 -> 2011', 'Małopolska', 30.0]
+        expected = ['2010 -> 2011', 'Małopolska', 20.0]
         with pytest.warns(Warning):
             results = a.pass_ratio_regression()[0]
         results = [*results]
@@ -99,7 +99,7 @@ Kujawsko-Pomorskie;zdało;mężczyźni;2010;20
 
     def test_pass_ratio_comparation(self):
         a = analysis.Analysis(self.csv_dir, encoding='utf-8')
-        expected = {'2010': 'Małopolska', '2011': 'Insufficient data'}
+        expected = {'2010': 'Wielkopolska', '2011': 'Insufficient data'}
         with pytest.warns(Warning):
             results = a.compare_pass_ratio('Wielkopolska', 'Małopolska')
 
@@ -119,7 +119,7 @@ Kujawsko-Pomorskie;zdało;mężczyźni;2010;20
     ("Wielkopolska", None),
     (None, None)
     ]
-    
+
     @pytest.mark.parametrize("p1, p2", incorrect_args)
     def test_pass_ratio_comparation_failed(self, p1, p2):
         a = analysis.Analysis(self.csv_dir, encoding='utf-8')

@@ -26,30 +26,33 @@ class Analysis:
 
         return average
 
-    def percentage_of_pass(self, provinence=None, gender=None, years=None):
+    def percentage_of_pass(self, provinence, gender=None, years=None):
         params = {}
+        params[self.area_col] = provinence
 
-        if provinence is not None:
-            params[self.area_col] = provinence
         if gender is not None:
             params[self.gender_col] = gender
         if years is not None:
             params[self.year_col] = years
 
         result = self.get_data_by_params(params)
-        years = {}
+        result_by_years = {}
+        years_all = {}
+
         for row in result:
-            if row[self.group_col] == 'zdało':
-                years[row[self.year_col]] = row[self.population_col]
+            year = row[self.year_col]
+            if year not in result_by_years:
+                result_by_years[year] = []
 
-        for year in years:
-            for row in result:
-                if row[self.group_col] == 'przystąpiło':
-                    attendance = row[self.population_col]
-                    passed = years[year]
-                    years[year] = (int(passed) / int(attendance)) * 100
+            result_by_years[year].append(row)
 
-        return (provinence, years)
+        out = {}
+
+        for year in result_by_years:
+            out[year] = self.calculate_pass_ratio(result_by_years[year])
+
+        print(out)
+        return (provinence, out)
 
     def best_pass_ratio(self, year, gender=None):
         params = {
@@ -149,24 +152,26 @@ class Analysis:
         Calculate pass ratio in rows sorted by area
         '''
         pass_by_area = {}
+        years = {}
         for row in rows:
             area = row[self.area_col]
             if area not in pass_by_area:
-                pass_by_area[area] = {'All': None, 'Pass': None}
+                pass_by_area[area] = {'All': 0, 'Pass': 0}
 
+            people = int(row[self.population_col])
             if row[self.group_col] == 'zdało':
-                pass_by_area[area]['Pass'] = row[self.population_col]
+                updated =  pass_by_area[area]['Pass'] + people
+                pass_by_area[area]['Pass'] = updated
+
             if row[self.group_col] == 'przystąpiło':
-                pass_by_area[area]['All'] = row[self.population_col]
+                updated =  pass_by_area[area]['All'] + people
+                pass_by_area[area]['All'] = updated
 
         ratio = {}
         for area in pass_by_area:
             data = pass_by_area[area]
-            try:
-                ratio[area] = (
-                    int(data['Pass']) / int(data['All'])) * 100
 
-            except TypeError:
+            if 0 in data.values():
                 import warnings
                 warnings.warn(
                     """There is insufficient data for area {0}\n
@@ -175,6 +180,8 @@ Found passed: {1} Found attendance: {2}"""
                     Warning,
                     stacklevel=4
                 )
+            else:
+                ratio[area] = (data['Pass'] / data['All']) * 100
 
         return ratio
 
