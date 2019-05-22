@@ -1,6 +1,6 @@
 import os
 import operator
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 from .csv_handle import CSVHandle
 
 
@@ -21,10 +21,17 @@ class Analysis:
         '''Count average voivodeship attendance based on number of 
         people who took exam'''
         result = self.attendance_in_area('Polska', years, gender)
-        all_people = [int(x[self.population_col]) for x in result]
-        average = sum(all_people) / self.PROVINENCE_COUNT
+        people_in_year = defaultdict(lambda: 0)
+        for x in result:
+            year = x[self.year_col]
+            persons = x[self.population_col]
 
-        return average
+            people_in_year[year] = people_in_year[year]+int(persons)
+
+        for year, all_people in people_in_year.items():
+            people_in_year[year] = round(all_people / self.PROVINENCE_COUNT)
+
+        return dict(people_in_year)
 
     def percentage_of_pass(self, provinence, gender=None, years=None):
         params = {}
