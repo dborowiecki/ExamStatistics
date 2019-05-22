@@ -35,23 +35,14 @@ class Analysis:
         if years is not None:
             params[self.year_col] = years
 
-        result = self.get_data_by_params(params)
-        result_by_years = {}
-        years_all = {}
-
-        for row in result:
-            year = row[self.year_col]
-            if year not in result_by_years:
-                result_by_years[year] = []
-
-            result_by_years[year].append(row)
+        result          = self.get_data_by_params(params)
+        result_by_years = self.sort_data_by_years(result)
 
         out = {}
 
         for year in result_by_years:
             out[year] = self.calculate_pass_ratio(result_by_years[year])
 
-        print(out)
         return (provinence, out)
 
     def best_pass_ratio(self, year, gender=None):
@@ -74,8 +65,7 @@ class Analysis:
 
         # all areas pass ratio by years dict[year][area] = score
         data_by_years = {}
-        all_ratios = self.get_data_by_params(params)
-
+        all_ratios    = self.get_data_by_params(params)
         data_by_years = self.sort_data_by_years(all_ratios)
 
         pass_ratio_by_years = {}
@@ -98,7 +88,7 @@ class Analysis:
             params[self.gender_col] = [gender]
 
         provinence_data = self.get_data_by_params(params)
-        data_by_years = self.sort_data_by_years(provinence_data)
+        data_by_years   = self.sort_data_by_years(provinence_data)
         pass_ratio_by_years = {}
         for year in data_by_years:
             pass_ratio_by_years[year] = self.calculate_pass_ratio(data_by_years[

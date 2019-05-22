@@ -46,7 +46,6 @@ class CSVHandle:
                                  for x in reader.fieldnames]
 
             fixed_params = self.fix_params(conditions, reader.fieldnames)
-
             out_data = self.parametrize_data(reader, **fixed_params)
 
         return out_data
@@ -106,23 +105,35 @@ class DatabaseCSVHandle(CSVHandle):
         self.db_name = db_path + db_name
         self.db_path = db_path
         self.table_name = 'matura'
-        self.database_uri = 'file:{0}?mode=ro'.format(db_path)
         self.encoding = 'windows-1250'
         self.delimiter = ';'
-
-    def get_csv_data(self):
-        pass
 
     def create_db(self):
         try:
             conn = sqlite3.connect(self.db_name)
+            conn.close()
         except Error as e:
             print(e)
-        finally:
-            conn.close()
-        pass
 
-    def impot_data(self):
+    def import_csv_to_sql(self):
+        try:
+            con = sqlite3.connect(self.db_name)
+            c = con.cursor()
+            with open(self.csv_file_path, 'r', encoding=self.encoding) as f:
+                reader = csv.DictReader(
+                    f, delimiter=self.delimiter)
+
+                for line in reader:
+                    args = tuple(line.values())
+                    statement = "INSERT INTO matura VALUES (?,?,?,?,?)"
+                    c.execute(statement, args)
+
+            con.commit()
+            con.close()
+        except ValueError as e:
+            print(str(e))
+
+    def impot_data_from_api(self):
         self.csv_file_path = self.db_path + "temp.csv"
         self.download_data_from_api(self.api_url)
         self.clean_db_table()
@@ -137,7 +148,7 @@ class DatabaseCSVHandle(CSVHandle):
             statement = "DROP TABLE IF EXISTS " + self.table_name
             c.execute(statement)
             con.commit()
-
+            con.close()
         except Exception as e:
             print(e)
       #  finally:
@@ -154,31 +165,12 @@ class DatabaseCSVHandle(CSVHandle):
         except ValueError as e:
             print(e)
 
-    def import_csv_to_sql(self):
-        try:
-            con = sqlite3.connect(self.db_name)
-            c = con.cursor()
-            with open(self.csv_file_path, 'r', encoding='Windows-1250') as f:
-                reader = csv.DictReader(
-                    f, delimiter=self.delimiter)
-
-                for line in reader:
-                    args = tuple(line.values())
-                    statement = "INSERT INTO matura VALUES (?,?,?,?,?)"
-                    c.execute(statement, args)
-            con.commit()
-            con.close()
-        except ValueError as e:
-            print(str(e))
-
     def get_csv_data(self, **conditions):
         out = []
         try:
             con = sqlite3.connect(self.db_name)
             con.row_factory = sqlite3.Row
             c = con.cursor()
-            c.execute(
-                "SELECT name FROM sqlite_master WHERE type='table';")
             c.execute("SELECT * FROM matura")
             out = c.fetchall()
 

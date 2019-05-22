@@ -3,6 +3,7 @@ import os
 import warnings
 import json
 import requests
+import sqlite3
 from DataAnalysis import csv_handle
 from collections import OrderedDict
 
@@ -14,8 +15,7 @@ Polska;przystąpiło;kobiety;2000;200
 Pomorze;przystąpiło;kobiety;2000;50
 Pomorze;zdało;kobiety;2000;20
 Wielkopolska;przystąpiło;kobiety;2000;40
-Wielkopolska;zdało;kobiety;2010;20
-"""
+Wielkopolska;zdało;kobiety;2010;20"""
 
     @pytest.fixture(autouse=True)
     def create_data_file(self, tmpdir):
@@ -113,14 +113,7 @@ Wielkopolska;zdało;kobiety;2010;20
         assert actual == expected
 
     def test_get_data_from_api(self, requests_mock):
-        url = 'http://data_api_test.com/jsonapi'
-        csv_data = 'http://data.com/csvfile.csv'
-        content = {}
-        content['data'] = {}
-        content['data']['attributes'] = {}
-        content['data']['attributes']['file_url'] = csv_data
-        requests_mock.get(url, text=json.dumps(content))
-        requests_mock.get(csv_data, text=self.test_csv_content)
+        url = self.mock_api_request(requests_mock)
 
         save_dir = self.csv_dir + "2"
         handle = csv_handle.CSVHandle(save_dir)
@@ -151,7 +144,7 @@ Wielkopolska;zdało;kobiety;2010;20
 
         save_dir = self.csv_dir + "2"
         handle = csv_handle.CSVHandle(save_dir)
-        with pytest.raises(Exception, match = r"Can't find info about csv file location in api*"):
+        with pytest.raises(Exception, match=r"Can't find info about csv file location in api*"):
             handle.download_data_from_api(url)
 
     def test_get_data_from_fail_connect(self, requests_mock):
@@ -163,5 +156,131 @@ Wielkopolska;zdało;kobiety;2010;20
 
         save_dir = self.csv_dir + "2"
         handle = csv_handle.CSVHandle(save_dir)
-        with pytest.raises(ValueError, match = r"Cannot connect to .* and get csv data" ):
+        with pytest.raises(ValueError, match=r"Cannot connect to .* and get csv data"):
             handle.download_data_from_api(url)
+
+    @pytest.fixture(autouse=True)
+    def create_fake_database(self, tmpdir):
+        self.tmpdir = tmpdir.strpath
+        d = tmpdir.mkdir("database")
+        self.db_dir = d
+        self.db_name = "fake_db.db"
+
+    def test_create_database(self):
+        db_handle = csv_handle.DatabaseCSVHandle(self.db_dir, "temp_db")
+        db_handle.create_db()
+        expected = os.path.isfile(db_handle.db_name)
+        os.remove(db_handle.db_name)
+        assert expected
+
+    def test_create_table(self):
+        db_handle = csv_handle.DatabaseCSVHandle(self.db_dir, "temp_db")
+        db_handle.csv_file_path = self.csv_dir
+        db_handle.create_db()
+        db_handle.create_table()
+        tables = []
+        try:
+            con = sqlite3.connect(db_handle.db_name)
+            cursor = con.cursor()
+            cursor.execute(
+                "SELECT name FROM sqlite_master WHERE type='table';")
+            tables = cursor.fetchone()
+            con.close()
+        except Exception:
+            pass
+        finally:
+            os.remove(db_handle.db_name)
+
+        assert db_handle.table_name in tables
+
+    def tet_drop_table(self):
+        db_handle = csv_handle.DatabaseCSVHandle(self.db_dir, "temp_db")
+        db_handle.csv_file_path = self.csv_dir
+        db_handle.create_db()
+        db_handle.create_table()
+        db_handle.clean_db_table()
+        tables = []
+        try:
+            con = sqlite3.connect(db_handle.db_name)
+            cursor = con.cursor()
+            cursor.execute(
+                "SELECT name FROM sqlite_master WHERE type='table';")
+            tables = cursor.fetchone()
+            con.close()
+        except Exception:
+            pass
+        finally:
+            os.remove(db_handle.db_name)
+
+        assert tables is None
+
+    def test_import_from_csv_to_db(self):
+        db_handle = csv_handle.DatabaseCSVHandle(self.db_dir, "temp_db")
+        db_handle.csv_file_path = self.csv_dir
+        db_handle.create_db()
+        db_handle.create_table()
+
+        db_handle.encoding = 'utf-8'
+        db_handle.import_csv_to_sql()
+        tables = []
+        try:
+            con = sqlite3.connect(db_handle.db_name)
+            cursor = con.cursor()
+            cursor.execute(
+                "SELECT * FROM matura")
+            tables = cursor.fetchall()
+            con.close()
+        except Exception:
+            pass
+        finally:
+            os.remove(db_handle.db_name)
+
+        expected = []
+        x = self.test_csv_content.split('\n')[1:]
+        for row in x:
+            expected.append(tuple(row.split(';')))
+
+        assert tables == expected
+
+    def test_import_data_from_api(self, requests_mock):
+        db_handle = csv_handle.DatabaseCSVHandle(self.db_dir, "temp_db")
+        db_handle.csv_file_path = self.csv_dir
+        db_handle.create_db()
+        db_handle.create_table()
+
+        url = self.mock_api_request(requests_mock)
+        db_handle.api_url = url
+        db_handle.encoding = 'utf-8'
+        db_handle.import_csv_to_sql()
+
+        tables = []
+        try:
+            con = sqlite3.connect(db_handle.db_name)
+            cursor = con.cursor()
+            cursor.execute(
+                "SELECT * FROM matura")
+            tables = cursor.fetchall()
+            con.close()
+        except Exception:
+            pass
+        finally:
+            os.remove(db_handle.db_name)
+
+        expected = []
+        x = self.test_csv_content.split('\n')[1:]
+        for row in x:
+            expected.append(tuple(row.split(';')))
+
+        assert tables == expected
+
+    def mock_api_request(self, requests_mock):
+        url = 'http://data_api_test.com/jsonapi'
+        csv_data = 'http://data.com/csvfile.csv'
+        content = {}
+        content['data'] = {}
+        content['data']['attributes'] = {}
+        content['data']['attributes']['file_url'] = csv_data
+        requests_mock.get(url, text=json.dumps(content))
+        requests_mock.get(csv_data, text=self.test_csv_content)
+
+        return url
