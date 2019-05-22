@@ -16,6 +16,7 @@ class TestCsvHandle(object):
         self.csv_dir.write("""Terytorium;Przystąpiło/zdało;Płeć;Rok;Liczba osób
 Polska;przystąpiło;kobiety;2000;200
 Polska;przystąpiło;mężczyźni;2000;200
+Polska;przystąpiło;mężczyźni;2001;200
 Pomorze;przystąpiło;kobiety;2000;50
 Pomorze;zdało;kobiety;2000;20
 Wielkopolska;przystąpiło;mężczyźni;2010;40
@@ -34,15 +35,15 @@ Kujawsko-Pomorskie;zdało;mężczyźni;2010;20
 
     def test_count_average(self):
         a = analysis.Analysis(self.csv_dir, encoding='utf-8')
-        expected = {'2000':round(400 / 16)}
-        actual = a.average_in_year(2000)
+        expected = 600 / 16
+        actual = a.average_in_year(2001, 2000)
 
         assert expected == actual
 
     def test_count_average_by_gender(self):
         a = analysis.Analysis(self.csv_dir, encoding='utf-8')
-        expected = {'2000':round(200 / 16)}
-        actual = a.average_in_year(2000, "kobiety")
+        expected =  200 / 16
+        actual = a.average_in_year(2000, 2000, gender="kobiety")
 
         assert expected == actual
 
@@ -56,7 +57,7 @@ Kujawsko-Pomorskie;zdało;mężczyźni;2010;20
         a = analysis.Analysis(self.csv_dir, encoding='utf-8')
 
         with pytest.raises(ValueError):
-            a.average_in_year(2000, 'invalid')
+            a.average_in_year(2000, gender='invalid')
 
     def test_pass_percentage_positive(self):
         a = analysis.Analysis(self.csv_dir, encoding='utf-8')
@@ -115,9 +116,9 @@ Kujawsko-Pomorskie;zdało;mężczyźni;2010;20
         assert results == expected
 
     incorrect_args = [
-    (None, "Pomorze"),
-    ("Wielkopolska", None),
-    (None, None)
+        (None, "Pomorze"),
+        ("Wielkopolska", None),
+        (None, None)
     ]
 
     @pytest.mark.parametrize("p1, p2", incorrect_args)
@@ -125,4 +126,4 @@ Kujawsko-Pomorskie;zdało;mężczyźni;2010;20
         a = analysis.Analysis(self.csv_dir, encoding='utf-8')
         expected = {'2010': 'Insufficient data', '2011': 'Insufficient data'}
         with pytest.raises(ValueError):
-            results = a.compare_pass_ratio(p1,p2)
+            results = a.compare_pass_ratio(p1, p2)

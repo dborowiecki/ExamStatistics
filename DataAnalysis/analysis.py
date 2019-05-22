@@ -17,21 +17,19 @@ class Analysis:
         self.gender_col = 'Płeć'
         self.population_col = 'Liczba osób'
 
-    def average_in_year(self, years, gender=None):
+    def average_in_year(self, to_year,from_year=2010, gender=None):
         '''Count average voivodeship attendance based on number of 
         people who took exam'''
+        years = list(range(from_year, to_year+1))
+
         result = self.attendance_in_area('Polska', years, gender)
-        people_in_year = defaultdict(lambda: 0)
-        for x in result:
-            year = x[self.year_col]
-            persons = x[self.population_col]
+        average = 0
+        for line in result:
+            average = average + int(line[self.population_col])
 
-            people_in_year[year] = people_in_year[year]+int(persons)
+        average = average / self.PROVINENCE_COUNT
 
-        for year, all_people in people_in_year.items():
-            people_in_year[year] = round(all_people / self.PROVINENCE_COUNT)
-
-        return dict(people_in_year)
+        return average
 
     def percentage_of_pass(self, provinence, gender=None, years=None):
         params = {}
