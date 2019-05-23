@@ -19,8 +19,6 @@ class Analysis:
         self.population_col = 'Liczba osób'
 
     def average_in_year(self, provinence, to_year,from_year=2010, gender=None):
-        '''Count average voivodeship attendance based on number of 
-        people who took exam'''
         years = list(range(from_year, to_year+1))
 
         result = self.attendance_in_area(provinence, years, gender)

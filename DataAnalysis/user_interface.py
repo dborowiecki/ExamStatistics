@@ -1,6 +1,7 @@
 import sys
 import os
 import getopt
+import re
 from .analysis import Analysis
 from .csv_handle import CSVHandle, DatabaseCSVHandle
 
@@ -14,12 +15,11 @@ Sposób użycia:
 -------------------------------------------
 Gdzie:
     <funkcja>       Funkcja analizująca dane.
-    <argumenty>     Arguenty funkcji.
     [-x <argument>] Argumenty opcjonalne
 -------------------------------------------
 Dostępne funkcje:
 
-    srednia_rok <rok>   :obliczenie średniej liczby osób, które przystąpiły do egzaminu dla danego województwa na przestrzeni lat, do podanego roku włącznie
+    srednia_rok <terytorium> <rok>   :obliczenie średniej liczby osób, które przystąpiły do egzaminu dla danego województwa na przestrzeni lat, do podanego roku włącznie
 
     procentowa_zdawalnosc <województwo> :obliczenie procentowej zdawalności dla danego województwa na przestrzeni lat
 
@@ -31,33 +31,34 @@ Dostępne funkcje:
 -------------------------------------------
 Argumenty
     -p <płeć>   :sprecyzowanie płci (k)obiety lub (m)ezczyzni, pozostawione puste powoduje otrzymanie całościowych danych
-    -d <źródło> :sprecozowanie źródła, dostępne:
-        -podanie ścieżki do już istniejącego pliku (np. -d Data/matura_data.csv)
-        -(a)pi    - użycie (a)pi: 
-        -db [-u]  - domyślne, użycie bazy danych, z parametrem -u uaktualnia bazę danych
+    -d <źródło> :sprecozowanie źródła.
+         Możliwe źródła:
+            -podanie ścieżki do już istniejącego pliku (np. -d Data/matura_data.csv)
+            -(a)pi    - użycie (a)pi: 
+            -db [-u]  - domyślne, użycie bazy danych, z parametrem -u uaktualnia bazę danych. Jeśli baza danych nie istnitje tworzy ją w './DataResources/matura_db'
 
 """
 
     def main(self, argv):
-        function, arguments = self.get_instructions(argv)
-        # tuple of function arguments and parameters
-        self.setup_handler(arguments['data_source'])
+        function = argv.pop(0)
+        arguments = self.get_instructions(argv)
+        print(arguments)
+        self.data_source = arguments['data_source']
+        self.setup_handler()
 
         arguments = (argv, arguments)
         self.run_function(function, arguments)
-
-        print("Function:  " + str(function))
-        print("Argument:  " + str(arguments))
 
     def get_instructions(self, argv):
         arguments = {
             'gender': None,
             'data_source': 'db'
         }
+        function_args = []
         opts, args = None, None
         try:
-            function = argv.pop(0)
-            opts, args = getopt.getopt(argv, "hp:d:u")
+            params = self.get_optional_args(argv)
+            opts, args = getopt.getopt(params, "hp:d:u")
         except getopt.GetoptError:
             print(self.usage_help)
             sys.exit(2)
@@ -86,57 +87,115 @@ Argumenty
                     arguments['data_source'] = arg
             elif opt == '-u':
                 arguments['data_source'] = 'dbu'
-        return function, arguments
+        return arguments
 
-    def setup_handler(self, data_source):
-        if data_source == 'api':
+    def setup_handler(self):
+        source = self.data_source
+        if source == 'api':
             self.analyze = Analysis('DataResources/matura')
             url = "https://api.dane.gov.pl/resources/17363"
             self.analyze.csv_handler.download_data_from_api(url)
 
-        elif data_source == 'db':
+        elif source == 'db':
             self.analyze = Analysis(
                 'DataResources/matura_db',
-                csv_source= DatabaseCSVHandle)
+                csv_source=DatabaseCSVHandle)
 
             if not os.path.isfile('DataResources/matura_db'):
                 self.analyze.csv_handler.impot_data_from_api()
 
-        else:
-            self.analyze = Analysis(data_source)
+        elif source == 'dbu':
+            self.analyze = Analysis(
+                'DataResources/matura_db',
+                csv_source=DatabaseCSVHandle)
 
-    def run_function(self,function, args):
+            self.analyze.csv_handler.impot_data_from_api()
+
+        else:
+            self.analyze = Analysis(source)
+
+    def run_function(self, function, args):
         # TODO: HANGE FOR CALLING METHODS
-        switcher = {
-            'srednia_rok': self.average_in_years(args),
-            'procentowa_zdawalnosc': self.percentage_pass(args),
-            'najlepsza_zdawalnosc': self.best_pass(args),
-            'regresja_zdawalnosci': self.pass_regression(args),
-            'porownaj_zdawalnocc': self.compare_pass(args),
-        }
-        switcher.get(function, lambda: print('Nieprwidłowa nazwa funkcji'))
+        if function == '-h':
+            print(self.usage_help)
+        if function == 'srednia_rok':
+            self.average_in_years(args)
+        if function == 'procentowa_zdawalnosc':
+            self.percentage_pass(args)
+        if function == 'najlepsza_zdawalnosc':
+            self.best_pass(args)
+        if function == 'regresja_zdawalnosci':
+            self.pass_regression(args)
+        if function == 'porownaj_zdawalnosc':
+            self.compare_pass(args)
+
+    def get_optional_args(self, args):
+        out = []
+        for element in args:
+            next_elem_index = args.index(element) + 1
+            out.append(element)
+            if next_elem_index < len(args):
+                out.append(args[next_elem_index])
+
+        return out
 
     def average_in_years(self, args):
         function_args, params = args
-        provienence = function_args[0] 
+        provinence = function_args[0]
         year = int(function_args[1])
-        out = self.analyze.average_in_year(provienence,year, gender=params['gender'])
-        print("Terytorium: {0}, Rok: {1}")
-        print(out)
-        pass
+        out = self.analyze.average_in_year(
+            provinence, year, gender=params['gender'])
+        print("{0}, {1}: {2:.2f}".format(provinence, year, out))
+        # print(out)
 
     def percentage_pass(self, args):
-        pass
+        function_args, params = args
+        provinence = function_args[0]
+        _, out = self.analyze.percentage_of_pass(
+            provinence, gender=params['gender'])
+
+        for year in out:
+            string = year + ': \n'
+            for key, value in out[year].items():
+                string = string + '     {0}: {1:.2f}%\n'.format(key, value)
+            print(string)
 
     def best_pass(self, args):
+        function_args, params = args
+        year = function_args[0]
+        out = self.analyze.best_pass_ratio(year, gender=params['gender'])
+        area, percent = out
+        string = '{0}: {2},  {1:.2f}'.format(year, area, percent)
+        print(string)
         pass
 
     def pass_regression(self, args):
+        _, params = args
+        out = self.analyze.pass_ratio_regression(gender=params['gender'])
+        next_data = out[0].years
+        print(next_data + ': ')
+        for element in out:
+            if element.years != next_data:
+                next_data = element.years
+                print(next_data + ': ')
+
+            string = '              {0}'.format(element.area)
+            print(string)
         pass
 
     def compare_pass(self, args):
+        function_arg, params = args
+
+        p1, p2 = function_arg[0], function_arg[1]
+        out = self.analyze.compare_pass_ratio(p1, p2, gender=params['gender'])
+        for year, better in out.items():
+            string = '{0}:  {1}'.format(year, better)
+            print(string)
         pass
 
+    def __del__(self):
+        if self.data_source == 'api':
+            os.remove('DataResources/matura')
 
 if __name__ == "__main__":
     i = Interface()
