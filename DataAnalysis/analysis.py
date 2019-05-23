@@ -22,11 +22,16 @@ class Analysis:
         years = list(range(from_year, to_year+1))
 
         result = self.attendance_in_area(provinence, years, gender)
+        
+        #works for data sort ascending by years]
+        year_max = result[-1][self.year_col]
         average = 0
         for line in result:
             average = average + int(line[self.population_col])
+            if line[self.year_col] > year_max:
+                year_max = line[self.year_col] 
 
-        average = average / (to_year+1-from_year)
+        average = average / (int(year_max)+1-from_year)
 
         return average
 

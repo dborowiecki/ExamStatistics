@@ -10,8 +10,8 @@ class Interface:
 
     usage_help = """"Analiza matur
 Sposób użycia:
-    analysis.py <funkcja> [-p <płeć>] [-d <źródło>]
-    analysis.py -h
+    matury <funkcja> [-p <płeć>] [-d <źródło>]
+    matury -h
 -------------------------------------------
 Gdzie:
     <funkcja>       Funkcja analizująca dane.
@@ -40,14 +40,25 @@ Argumenty
 """
 
     def main(self, argv):
-        function = argv.pop(0)
+        function = None
+        self.data_source = ""
+        try:
+            function = argv.pop(0)
+        except IndexError as e:
+            print("Nie wywołano żadnej metody\n Urochom z -h by uzyskać pomoc")
+            sys.exit(2)
+
         arguments = self.get_instructions(argv)
-        print(arguments)
         self.data_source = arguments['data_source']
         self.setup_handler()
 
         arguments = (argv, arguments)
-        self.run_function(function, arguments)
+        try:
+            self.run_function(function, arguments)
+        except ValueError as e:
+            print("Nie znaleziono rezultatów dla podanych argumentów.\n ")
+        except IndexError:
+            print("Nie podano poprawnych argumentów funkcji.\n Urochom z -h by uzyskać pomoc") 
 
     def get_instructions(self, argv):
         arguments = {
@@ -90,6 +101,9 @@ Argumenty
         return arguments
 
     def setup_handler(self):
+        if not os.path.isdir('DataResources'):
+            os.mkdir('DataResources')
+
         source = self.data_source
         if source == 'api':
             self.analyze = Analysis('DataResources/matura')
@@ -118,16 +132,18 @@ Argumenty
         # TODO: HANGE FOR CALLING METHODS
         if function == '-h':
             print(self.usage_help)
-        if function == 'srednia_rok':
+        elif function == 'srednia_rok':
             self.average_in_years(args)
-        if function == 'procentowa_zdawalnosc':
+        elif function == 'procentowa_zdawalnosc':
             self.percentage_pass(args)
-        if function == 'najlepsza_zdawalnosc':
+        elif function == 'najlepsza_zdawalnosc':
             self.best_pass(args)
-        if function == 'regresja_zdawalnosci':
+        elif function == 'regresja_zdawalnosci':
             self.pass_regression(args)
-        if function == 'porownaj_zdawalnosc':
+        elif function == 'porownaj_zdawalnosc':
             self.compare_pass(args)
+        else:
+            print("Nie podano poprawnej nazwy metody")
 
     def get_optional_args(self, args):
         out = []
