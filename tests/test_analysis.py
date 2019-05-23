@@ -35,14 +35,14 @@ Kujawsko-Pomorskie;zdało;mężczyźni;2010;20
 
     def test_count_average(self):
         a = analysis.Analysis(self.csv_dir, encoding='utf-8')
-        expected = 600 / 16
+        expected = 600 / 2
         actual = a.average_in_year('Polska',2001, 2000)
 
         assert expected == actual
 
     def test_count_average_by_gender(self):
         a = analysis.Analysis(self.csv_dir, encoding='utf-8')
-        expected =  200 / 16
+        expected =  200 / 1
         actual = a.average_in_year('Polska',2000, 2000, gender="kobiety")
 
         assert expected == actual

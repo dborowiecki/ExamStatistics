@@ -1,33 +1,34 @@
 import os
 import operator
 from collections import namedtuple, defaultdict
-from .csv_handle import CSVHandle
+from .csv_handle import CSVHandle, DatabaseCSVHandle
 
 
 class Analysis:
     PROVINENCE_COUNT = 16
 
-    def __init__(self, file_name, encoding='windows-1250'):
+    def __init__(self, file_name, csv_source = CSVHandle, encoding='windows-1250'):
         self.csv = file_name
-        self.csv_handler = CSVHandle(file_name, encoding=encoding)
-        # TODO: move to settings
+        self.csv_handler = csv_source(file_name, encoding=encoding)
+
+
         self.area_col = 'Terytorium'
         self.group_col = 'Przystąpiło/zdało'
         self.year_col = 'Rok'
         self.gender_col = 'Płeć'
         self.population_col = 'Liczba osób'
 
-    def average_in_year(self, to_year,from_year=2010, gender=None):
+    def average_in_year(self, provinence, to_year,from_year=2010, gender=None):
         '''Count average voivodeship attendance based on number of 
         people who took exam'''
         years = list(range(from_year, to_year+1))
 
-        result = self.attendance_in_area('Polska', years, gender)
+        result = self.attendance_in_area(provinence, years, gender)
         average = 0
         for line in result:
             average = average + int(line[self.population_col])
 
-        average = average / self.PROVINENCE_COUNT
+        average = average / (to_year+1-from_year)
 
         return average
 
@@ -58,7 +59,7 @@ class Analysis:
             params[self.gender_col] = gender
 
         all_in_year = self.get_data_by_params(params)
-        pass_by_area = calculate_pass_ratio(year, all_in_year)
+        pass_by_area = self.calculate_pass_ratio(all_in_year)
         best = sorted(pass_by_area, key=pass_by_area.get)[-1]
 
         return (pass_by_area[best], best)
@@ -227,3 +228,6 @@ Found passed: {1} Found attendance: {2}"""
             data_by_years[year].append(row)
 
         return data_by_years
+
+    def _raise_warning(self, message):
+        pass
