@@ -1,6 +1,8 @@
 import sys
 import os
 import getopt
+from .analysis import Analysis
+from .csv_handle import CSVHandle, DatabaseCSVHandle
 
 
 class Interface:
@@ -25,20 +27,23 @@ Dostępne funkcje:
 
     regresja_zdawalnosci :wykrycie województw, które zanotowały regresję
 
-    porownaj_zdawalnocc <województwo> <województwo> :porównanie dwóch województw - dla podanych dwóch województw wypisanie, które z województw miało lepszą zdawalność w każdym dostępnym roku
+    porownaj_zdawalnosc <województwo> <województwo> :porównanie dwóch województw - dla podanych dwóch województw wypisanie, które z województw miało lepszą zdawalność w każdym dostępnym roku
 -------------------------------------------
 Argumenty
     -p <płeć>   :sprecyzowanie płci (k)obiety lub (m)ezczyzni, pozostawione puste powoduje otrzymanie całościowych danych
     -d <źródło> :sprecozowanie źródła, dostępne:
         -podanie ścieżki do już istniejącego pliku (np. -d Data/matura_data.csv)
-        -api - użycie (a)pi: 
-        -db  - domyślne, użycie bazy danych
+        -(a)pi    - użycie (a)pi: 
+        -db [-u]  - domyślne, użycie bazy danych, z parametrem -u uaktualnia bazę danych
 
 """
 
     def main(self, argv):
         function, arguments = self.get_instructions(argv)
+        # tuple of function arguments and parameters
+        self.setup_handler(arguments['data_source'])
 
+        arguments = (argv, arguments)
         self.run_function(function, arguments)
 
         print("Function:  " + str(function))
@@ -52,7 +57,7 @@ Argumenty
         opts, args = None, None
         try:
             function = argv.pop(0)
-            opts, args = getopt.getopt(argv, "hp:d:")
+            opts, args = getopt.getopt(argv, "hp:d:u")
         except getopt.GetoptError:
             print(self.usage_help)
             sys.exit(2)
@@ -79,11 +84,58 @@ Argumenty
                     arguments['data_source'] = 'db'
                 if os.path.isfile(arg):
                     arguments['data_source'] = arg
-
+            elif opt == '-u':
+                arguments['data_source'] = 'dbu'
         return function, arguments
 
+    def setup_handler(self, data_source):
+        if data_source == 'api':
+            self.analyze = Analysis('DataResources/matura')
+            url = "https://api.dane.gov.pl/resources/17363"
+            self.analyze.csv_handler.download_data_from_api(url)
+
+        elif data_source == 'db':
+            self.analyze = Analysis(
+                'DataResources/matura_db',
+                csv_source= DatabaseCSVHandle)
+
+            if not os.path.isfile('DataResources/matura_db'):
+                self.analyze.csv_handler.impot_data_from_api()
+
+        else:
+            self.analyze = Analysis(data_source)
+
     def run_function(self,function, args):
-        
+        # TODO: HANGE FOR CALLING METHODS
+        switcher = {
+            'srednia_rok': self.average_in_years(args),
+            'procentowa_zdawalnosc': self.percentage_pass(args),
+            'najlepsza_zdawalnosc': self.best_pass(args),
+            'regresja_zdawalnosci': self.pass_regression(args),
+            'porownaj_zdawalnocc': self.compare_pass(args),
+        }
+        switcher.get(function, lambda: print('Nieprwidłowa nazwa funkcji'))
+
+    def average_in_years(self, args):
+        function_args, params = args
+        provienence = function_args[0] 
+        year = int(function_args[1])
+        out = self.analyze.average_in_year(provienence,year, gender=params['gender'])
+        print("Terytorium: {0}, Rok: {1}")
+        print(out)
+        pass
+
+    def percentage_pass(self, args):
+        pass
+
+    def best_pass(self, args):
+        pass
+
+    def pass_regression(self, args):
+        pass
+
+    def compare_pass(self, args):
+        pass
 
 
 if __name__ == "__main__":
