@@ -63,8 +63,9 @@ class Analysis:
 
         all_in_year = self.get_data_by_params(params)
         pass_by_area = self.calculate_pass_ratio(all_in_year)
-        best = sorted(pass_by_area, key=pass_by_area.get)[-1]
-
+        best = sorted(pass_by_area, key=pass_by_area.get, reverse=True)[1]
+        print(pass_by_area)
+        print(sorted(pass_by_area, key=pass_by_area.get, reverse=True))
         return (pass_by_area[best], best)
 
     def pass_ratio_regression(self, gender=None):
@@ -151,7 +152,6 @@ class Analysis:
         Calculate pass ratio in rows sorted by area
         '''
         pass_by_area = {}
-        years = {}
         for row in rows:
             area = row[self.area_col]
             if area not in pass_by_area:
