@@ -164,17 +164,17 @@ Wielkopolska;zdało;kobiety;2010;20"""
         self.tmpdir = tmpdir.strpath
         d = tmpdir.mkdir("database")
         self.db_dir = d
-        self.db_name = "fake_db.db"
+        self.db_name = d.join("fake_db.db")
 
     def test_create_database(self):
-        db_handle = csv_handle.DatabaseCSVHandle(self.db_dir, "temp_db")
+        db_handle = csv_handle.DatabaseCSVHandle(self.db_name)
         db_handle.create_db()
         expected = os.path.isfile(db_handle.db_name)
         os.remove(db_handle.db_name)
         assert expected
 
     def test_create_table(self):
-        db_handle = csv_handle.DatabaseCSVHandle(self.db_dir, "temp_db")
+        db_handle = csv_handle.DatabaseCSVHandle(self.db_name)
         db_handle.csv_file_path = self.csv_dir
         db_handle.create_db()
         db_handle.create_table()
@@ -194,7 +194,7 @@ Wielkopolska;zdało;kobiety;2010;20"""
         assert db_handle.table_name in tables
 
     def tet_drop_table(self):
-        db_handle = csv_handle.DatabaseCSVHandle(self.db_dir, "temp_db")
+        db_handle = csv_handle.DatabaseCSVHandle( self.db_name)
         db_handle.csv_file_path = self.csv_dir
         db_handle.create_db()
         db_handle.create_table()
@@ -215,7 +215,7 @@ Wielkopolska;zdało;kobiety;2010;20"""
         assert tables is None
 
     def test_import_from_csv_to_db(self):
-        db_handle = csv_handle.DatabaseCSVHandle(self.db_dir, "temp_db")
+        db_handle = csv_handle.DatabaseCSVHandle(self.db_name )
         db_handle.csv_file_path = self.csv_dir
         db_handle.create_db()
         db_handle.create_table()
@@ -243,7 +243,7 @@ Wielkopolska;zdało;kobiety;2010;20"""
         assert tables == expected
 
     def test_import_data_from_api(self, requests_mock):
-        db_handle = csv_handle.DatabaseCSVHandle(self.db_dir, "temp_db")
+        db_handle = csv_handle.DatabaseCSVHandle( self.db_name)
         db_handle.csv_file_path = self.csv_dir
         db_handle.create_db()
         db_handle.create_table()

@@ -36,14 +36,14 @@ Kujawsko-Pomorskie;zdało;mężczyźni;2010;20
     def test_count_average(self):
         a = analysis.Analysis(self.csv_dir, encoding='utf-8')
         expected = 600 / 16
-        actual = a.average_in_year(2001, 2000)
+        actual = a.average_in_year('Polska',2001, 2000)
 
         assert expected == actual
 
     def test_count_average_by_gender(self):
         a = analysis.Analysis(self.csv_dir, encoding='utf-8')
         expected =  200 / 16
-        actual = a.average_in_year(2000, 2000, gender="kobiety")
+        actual = a.average_in_year('Polska',2000, 2000, gender="kobiety")
 
         assert expected == actual
 
@@ -51,13 +51,13 @@ Kujawsko-Pomorskie;zdało;mężczyźni;2010;20
         a = analysis.Analysis(self.csv_dir, encoding='utf-8')
 
         with pytest.raises(ValueError):
-            a.average_in_year(-1)
+            a.average_in_year('Polska',-1)
 
     def test_count_average_invalid_gender_exception(self):
         a = analysis.Analysis(self.csv_dir, encoding='utf-8')
 
         with pytest.raises(ValueError):
-            a.average_in_year(2000, gender='invalid')
+            a.average_in_year('Polska',2000, gender='invalid')
 
     def test_pass_percentage_positive(self):
         a = analysis.Analysis(self.csv_dir, encoding='utf-8')

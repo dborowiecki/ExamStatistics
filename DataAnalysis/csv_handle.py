@@ -100,12 +100,12 @@ class CSVHandle:
 
 class DatabaseCSVHandle(CSVHandle):
 
-    def __init__(self, db_path, db_name):
+    def __init__(self, db_name,encoding = 'windows-1250'):
         self.api_url = "https://api.dane.gov.pl/resources/17363"
-        self.db_name = db_path + db_name
-        self.db_path = db_path
+        self.db_name = db_name
+        self.db_path = os.path.dirname(db_name)
         self.table_name = 'matura'
-        self.encoding = 'windows-1250'
+        self.encoding = encoding
         self.delimiter = ';'
 
     def create_db(self):
@@ -159,6 +159,10 @@ class DatabaseCSVHandle(CSVHandle):
             con = sqlite3.connect(self.db_name)
             c = con.cursor()
             col_names = self.get_column_names()
+            col_names = [x.lstrip().rstrip()
+                                 for x in col_names]
+
+            
             statement = "CREATE TABLE matura {0}".format(tuple(col_names))
             c.execute(statement)
             con.commit()
@@ -180,5 +184,4 @@ class DatabaseCSVHandle(CSVHandle):
         except ValueError as e:
             print(e)
 
-        print(out)
         return out
