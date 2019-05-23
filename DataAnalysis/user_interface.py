@@ -50,7 +50,12 @@ Argumenty
 
         arguments = self.get_instructions(argv)
         self.data_source = arguments['data_source']
-        self.setup_handler()
+        try:
+            self.setup_handler()
+        except Exception as e:
+            print("Nie udało się pobrać danych z api, błąd:")
+            print(e)
+            sys.exit(2)
 
         arguments = (argv, arguments)
         try:
@@ -65,11 +70,13 @@ Argumenty
             'gender': None,
             'data_source': 'db'
         }
+
         function_args = []
         opts, args = None, None
         try:
             params = self.get_optional_args(argv)
             opts, args = getopt.getopt(params, "hp:d:u")
+
         except getopt.GetoptError:
             print(self.usage_help)
             sys.exit(2)
@@ -88,7 +95,7 @@ Argumenty
                     arguments['gender'] = 'mężczyźni'
                 else:
                     print(
-                        "Podano parametr płeć, ale nie można go dopasować. \nk - kobiety\nm- mężczyźni ")
+                        "Podano parametr płeć, ale nie można go dopasować. \nk - kobiety\nm - mężczyźni ")
             elif opt == '-d':
                 if arg in ['a', 'api']:
                     arguments['data_source'] = 'api'
@@ -98,6 +105,7 @@ Argumenty
                     arguments['data_source'] = arg
             elif opt == '-u':
                 arguments['data_source'] = 'dbu'
+
         return arguments
 
     def setup_handler(self):
@@ -148,10 +156,13 @@ Argumenty
     def get_optional_args(self, args):
         out = []
         for element in args:
-            next_elem_index = args.index(element) + 1
-            out.append(element)
-            if next_elem_index < len(args):
-                out.append(args[next_elem_index])
+            if re.match(r'-.', element):
+                next_elem_index = args.index(element) + 1
+                out.append(element)
+
+                if next_elem_index < len(args):
+                    out.append(args[next_elem_index])
+
 
         return out
 
@@ -211,7 +222,10 @@ Argumenty
 
     def __del__(self):
         if self.data_source == 'api':
-            os.remove('DataResources/matura')
+            try:
+                os.remove('DataResources/matura')
+            except OSError:
+                pass
 
 if __name__ == "__main__":
     i = Interface()

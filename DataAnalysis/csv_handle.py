@@ -3,7 +3,7 @@ import sqlite3
 import json
 import requests
 import os
-from requests.exceptions import HTTPError
+from requests.exceptions import HTTPError, RequestException
 
 
 class CSVHandle:
@@ -35,6 +35,13 @@ class CSVHandle:
             print("Connecting to api failed: \n" + repr(e))
             raise ValueError("Cannot connect to " +
                              api_url + " and get csv data")
+        except RequestException as e:  # This is the correct syntax
+            print("Error occured durning connecting to server")
+            raise e
+        except Exception as e:
+            print("Unknown error occured during getting data from api")
+            raise e
+
 
     def get_csv_data(self, **conditions):
         out_data = []
