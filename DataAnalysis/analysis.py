@@ -37,7 +37,7 @@ class Analysis:
 
     def percentage_of_pass(self, province, gender=None, years=None):
         params = {}
-        params[self.area_col] = province.split(',')
+        params[self.area_col] = province
 
         if gender is not None:
             params[self.gender_col] = gender
@@ -90,7 +90,7 @@ class Analysis:
         if province_1 is None or province_2 is None:
             raise ValueError("province cannot be empty")
         params = {}
-        params[self.area_col] = province_1.split(',') + province_2.split(',')
+        params[self.area_col] = province_1 + province_2
 
         if gender is not None:
             params[self.gender_col] = [gender]
@@ -110,12 +110,8 @@ class Analysis:
                 better_in_year[
                     year] = province_1 if p1 > p2 else province_2
             except KeyError as e:
-                import warnings
-                warnings.warn(
-                    "There is not enough data for province {0} for comparing pass in {1}"
-                    .format(e.args[0], year),
-                    Warning,
-                    stacklevel=4)
+                self._raise_warning("There is not enough data for province {0} for comparing pass in {1}"
+                                    .format(e.args[0], year))
                 better_in_year[year] = 'Insufficient data'
 
         return better_in_year
@@ -126,7 +122,7 @@ class Analysis:
         result is empty.
         '''
         params = {
-            self.area_col: area.split(','),
+            self.area_col: area,
             self.group_col: 'przystąpiło',
             self.year_col: str(years)
         }
@@ -169,14 +165,8 @@ class Analysis:
             data = pass_by_area[area]
 
             if 0 in data.values():
-                import warnings
-                warnings.warn(
-                    """There is insufficient data for area {0}\n
-Found passed: {1} Found attendance: {2}"""
-                    .format(area, data['Pass'], data['All']),
-                    Warning,
-                    stacklevel=4
-                )
+                self._raise_warning( """There is insufficient data for area {0}\n
+Found passed: {1} Found attendance: {2}""".format(area, data['Pass'], data['All']))
             else:
                 ratio[area] = (data['Pass'] / data['All']) * 100
 

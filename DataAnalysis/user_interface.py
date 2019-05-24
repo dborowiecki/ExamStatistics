@@ -63,7 +63,8 @@ Argumenty
         except ValueError as e:
             print("Nie znaleziono rezultatów dla podanych argumentów.\n ")
         except IndexError:
-            print("Nie podano poprawnych argumentów funkcji.\n Urochom z -h by uzyskać pomoc") 
+            print(
+                "Nie podano poprawnych argumentów funkcji.\n Urochom z -h by uzyskać pomoc")
 
     def get_instructions(self, argv):
         arguments = {
@@ -164,13 +165,12 @@ Argumenty
                 if next_elem_index < len(args):
                     out.append(args[next_elem_index])
 
-
         return out
 
     def average_in_years(self, args):
         function_args, params = args
-        province = function_args[0]
-        year = int(function_args[1])
+        province = function_args[0].split(',')
+        year = int(function_args[1]).split(',')
         out = self.analyze.average_in_year(
             province, year, gender=params['gender'])
         print("{0}, {1}: {2:.2f}".format(province, year, out))
@@ -178,7 +178,7 @@ Argumenty
 
     def percentage_pass(self, args):
         function_args, params = args
-        province = function_args[0]
+        province = function_args[0].split(',')
         _, out = self.analyze.percentage_of_pass(
             province, gender=params['gender'])
 
@@ -190,7 +190,7 @@ Argumenty
 
     def best_pass(self, args):
         function_args, params = args
-        year = function_args[0]
+        year = function_args[0].split(',')
         out = self.analyze.best_pass_ratio(year, gender=params['gender'])
         area, percent = out
         string = '{0}: {2},  {1:.2f}'.format(year, area, percent)
