@@ -47,13 +47,13 @@ Gdzie:
 * ###### ```najlepsza_zdawalnosc <rok> ```
 
     Zwraca województwo z najlepszą procentową zdawalnością w podanym roku.
-    Przykład:
+    Przykłady:
     
     * Znalezienie województwa z najlepszą zdawalnością w roku 2012:
 
              $ python matury najlepsza_zdawalnosc 2012
          
-    * Znalezienie województwa z najlepszą średnią zdawalnością w latach 2012,2013,2014:
+    * Znalezienie województwa z najlepszą średnią zdawalnością w latach 2012, 2013, 2014:
 
             $ python matury najlepsza_zdawalnosc 2012,2013,2014
 * ###### ```regresja_zdawalnosci ```

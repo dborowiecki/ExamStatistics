@@ -168,18 +168,18 @@ Argumenty
 
     def average_in_years(self, args):
         function_args, params = args
-        provinence = function_args[0]
+        province = function_args[0]
         year = int(function_args[1])
         out = self.analyze.average_in_year(
-            provinence, year, gender=params['gender'])
-        print("{0}, {1}: {2:.2f}".format(provinence, year, out))
+            province, year, gender=params['gender'])
+        print("{0}, {1}: {2:.2f}".format(province, year, out))
         # print(out)
 
     def percentage_pass(self, args):
         function_args, params = args
-        provinence = function_args[0]
+        province = function_args[0]
         _, out = self.analyze.percentage_of_pass(
-            provinence, gender=params['gender'])
+            province, gender=params['gender'])
 
         for year in out:
             string = year + ': \n'
@@ -226,7 +226,3 @@ Argumenty
                 os.remove('DataResources/matura')
             except OSError:
                 pass
-
-if __name__ == "__main__":
-    i = Interface()
-    i.main(sys.argv[1:])
