@@ -170,10 +170,10 @@ Argumenty
     def average_in_years(self, args):
         function_args, params = args
         province = function_args[0].split(',')
-        year = int(function_args[1]).split(',')
+        year = int(function_args[1])
         out = self.analyze.average_in_year(
             province, year, gender=params['gender'])
-        print("{0}, {1}: {2:.2f}".format(province, year, out))
+        print("{0}, {1}: {2:.2f}".format((',').join(province), year, out))
         # print(out)
 
     def percentage_pass(self, args):
@@ -193,7 +193,7 @@ Argumenty
         year = function_args[0].split(',')
         out = self.analyze.best_pass_ratio(year, gender=params['gender'])
         area, percent = out
-        string = '{0}: {2},  {1:.2f}'.format(year, area, percent)
+        string = '{0}: {2},  {1:.2f}'.format(','.join(year), area, percent)
         print(string)
         pass
 
