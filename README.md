@@ -101,3 +101,12 @@ Wyświetlenie w terminalu informacji o sposobie użytkowania programu:
         $ python matury regresja_zdawalnosci -d db -u #Uaktualnienie bazy danych i wykorzystanie jej jako źródła danych
     
         $ python matury regresja_zdawalnosci -d Data/matura.csv #Wykorzystanie pliku lokalnego matura.csv który znajduje się w folderze Data
+
+---
+## Użyte dodatkowe moduły
+##### 1. [Requests](https://2.python-requests.org/en/master/) 
+Łączeniae z api i pobieranie danych.
+##### 2. [Requests-mock](https://github.com/jamielennox/requests-mock) 
+Do mockowania zapytań w testach jednostkowych.
+##### 3. [Pytest](https://docs.pytest.org/en/latest/contents.html) 
+Stworzenie testów jednostkowych.
