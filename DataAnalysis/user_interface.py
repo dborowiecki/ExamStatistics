@@ -99,10 +99,13 @@ Argumenty
             elif opt == '-d':
                 if arg in ['a', 'api']:
                     arguments['data_source'] = 'api'
-                if arg == 'db':
+                elif arg == 'db':
                     arguments['data_source'] = 'db'
-                if os.path.isfile(arg):
+                elif os.path.isfile(arg):
                     arguments['data_source'] = arg
+                else:
+                    print("Nie znaleziono podanego pliku w ścieżce. ")
+                    print("Do sporządzenia statytyk używam danych z bazy")
             elif opt == '-u':
                 arguments['data_source'] = 'dbu'
 
@@ -113,11 +116,11 @@ Argumenty
             os.mkdir('DataResources')
 
         source = self.data_source
+
         if source == 'api':
             self.analyze = Analysis('DataResources/matura')
             url = "https://api.dane.gov.pl/resources/17363"
             self.analyze.csv_handler.download_data_from_api(url)
-
         elif source == 'db':
             self.analyze = Analysis(
                 'DataResources/matura_db',
@@ -125,14 +128,12 @@ Argumenty
 
             if not os.path.isfile('DataResources/matura_db'):
                 self.analyze.csv_handler.impot_data_from_api()
-
         elif source == 'dbu':
             self.analyze = Analysis(
                 'DataResources/matura_db',
                 csv_source=DatabaseCSVHandle)
 
             self.analyze.csv_handler.impot_data_from_api()
-
         else:
             self.analyze = Analysis(source)
 
